@@ -27,100 +27,74 @@ async function loadApps() {
       grid.appendChild(card);
     });
 
-    // Foca o primeiro cartão assim que os cards estiverem no DOM.
-    // Isto "acorda" o modo de foco da TV e desativa o cursor do rato.
-    const firstCard = grid.querySelector('.app-card');
-    if (firstCard) firstCard.focus();
+    // Aguarda 500ms para garantir que o motor da TV termina
+    // de inicializar o modo rato antes de forçarmos o foco.
+    setTimeout(function () {
+      var cards = document.querySelectorAll('.app-card');
+      if (cards.length > 0) {
+        cards[0].focus();
+      }
+    }, 500);
 
   } catch (error) {
-    grid.innerHTML = `<p class="error-msg">Erro ao carregar os apps: ${error.message}</p>`;
+    grid.innerHTML = '<p class="error-msg">Erro ao carregar os apps: ' + error.message + '</p>';
     console.error('Falha ao carregar repo.json:', error);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Navegação espacial por D-pad (setas do comando da TV)
+// Navegação por D-pad usando keyCode (compatibilidade máxima com TVs)
 // ---------------------------------------------------------------------------
-// Estratégia: em vez de calcular posições no grid via CSS (que pode variar),
-// usamos getBoundingClientRect() para encontrar o cartão mais próximo na
-// direção pressionada. Assim funciona independentemente do número de colunas.
+// keyCode 37 = ArrowLeft  | 38 = ArrowUp
+// keyCode 39 = ArrowRight | 40 = ArrowDown | 13 = Enter
 
-function getCards() {
-  return Array.from(document.querySelectorAll('.app-card'));
-}
+document.addEventListener('keydown', function (e) {
+  var code = e.keyCode || e.which;
 
-function getRect(el) {
-  return el.getBoundingClientRect();
-}
-
-// Calcula o centro X e Y de um elemento.
-function center(rect) {
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-}
-
-// Devolve o melhor candidato na direção indicada relativamente ao elemento atual.
-// Critério: o candidato tem de estar "para a frente" na direção pretendida
-// e é escolhido o que tiver menor distância euclidiana ao centro do atual.
-function findNeighbor(current, direction) {
-  const cards   = getCards();
-  const curRect = getRect(current);
-  const curC    = center(curRect);
-
-  let best     = null;
-  let bestDist = Infinity;
-
-  cards.forEach(card => {
-    if (card === current) return;
-
-    const rect = getRect(card);
-    const c    = center(rect);
-
-    // Filtra apenas os cartões que estão "à frente" na direção correta.
-    // Usamos uma tolerância de 5px para evitar rejeitar vizinhos alinhados.
-    const isForward = {
-      ArrowRight: c.x > curC.x + 5,
-      ArrowLeft:  c.x < curC.x - 5,
-      ArrowDown:  c.y > curC.y + 5,
-      ArrowUp:    c.y < curC.y - 5,
-    }[direction];
-
-    if (!isForward) return;
-
-    const dist = Math.hypot(c.x - curC.x, c.y - curC.y);
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = card;
-    }
-  });
-
-  return best;
-}
-
-document.addEventListener('keydown', e => {
-  const ARROW_KEYS = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'];
-
-  if (!ARROW_KEYS.includes(e.key)) return;
-
-  // Evita scroll acidental da página
-  e.preventDefault();
-
-  const current = document.activeElement;
-  if (!current || !current.classList.contains('app-card')) {
-    // Se o foco estiver perdido, volta ao primeiro cartão
-    const first = document.querySelector('.app-card');
-    if (first) first.focus();
+  // Só interceta as teclas de navegação e Enter
+  if (code !== 37 && code !== 38 && code !== 39 && code !== 40 && code !== 13) {
     return;
   }
 
-  const neighbor = findNeighbor(current, e.key);
-  if (neighbor) {
-    neighbor.focus();
-    // Garante que o cartão focado é sempre visível no ecrã
-    neighbor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-});
+  var cards = document.querySelectorAll('.app-card');
+  if (!cards || cards.length === 0) return;
 
-// A tecla Enter no cartão focado abre o link (comportamento padrão do <a>).
-// Não é necessário código adicional para isso.
+  var cardsArray = Array.prototype.slice.call(cards);
+  var active     = document.activeElement;
+  var currentIndex = cardsArray.indexOf(active);
+
+  // Se o foco não está em nenhum card, foca o primeiro e sai
+  if (currentIndex === -1) {
+    cardsArray[0].focus();
+    e.preventDefault();
+    return;
+  }
+
+  if (code === 13) {
+    // Enter: abre o link do card focado
+    active.click();
+    return;
+  }
+
+  // Setas: move o índice
+  e.preventDefault();
+
+  var nextIndex = currentIndex;
+
+  if (code === 39 || code === 40) {
+    // Direita ou Baixo: avança
+    nextIndex = currentIndex + 1;
+  } else if (code === 37 || code === 38) {
+    // Esquerda ou Cima: recua
+    nextIndex = currentIndex - 1;
+  }
+
+  // Limita ao intervalo válido [0, length-1]
+  if (nextIndex < 0) nextIndex = 0;
+  if (nextIndex >= cardsArray.length) nextIndex = cardsArray.length - 1;
+
+  cardsArray[nextIndex].focus();
+  cardsArray[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
 
 document.addEventListener('DOMContentLoaded', loadApps);
