@@ -1,18 +1,11 @@
 {
   "apps": [
     {
-      "id": "stremio",
-      "name": "Stremio Web",
-      "img": "https://www.stremio.com/website/stremio-logo-small.png",
-      "url": "https://web.stremio.com/",
-      "description": "Plataforma de streaming que agrega conteúdo de várias fontes num só lugar."
-    },
-    {
-      "id": "geforcenow",
-      "name": "GeForce NOW",
-      "img": "https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/geforcenow/gfn-social-share.jpg",
-      "url": "https://play.geforcenow.com/",
-      "description": "Serviço de cloud gaming da NVIDIA. Joga os teus jogos em streaming na TV."
+      "id": "iptv",
+      "name": "IPTV",
+      "img": "https://www.iptvblinkplayer.com/favicon.ico",
+      "url": "http://webtv.iptvblinkplayer.com",
+      "description": "Reprodutor IPTV web para ver os teus canais na TV."
     }
   ]
 }
